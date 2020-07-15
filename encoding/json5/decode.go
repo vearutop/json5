@@ -225,14 +225,14 @@ func (d *decodeState) next() []byte {
 	return item
 }
 
-func (d *decodeState) scanInlineComment() int {
+func (d *decodeState) scanComment() int {
 	var newOp int
 	for {
 		c := int(d.data[d.off])
 		d.off++
 		newOp = d.scan.step(&d.scan, c)
 		fmt.Println("c = ", string(c))
-		if newOp != scanSkipInComment {
+		if newOp != scanSkipComment {
 			break
 		}
 	}
