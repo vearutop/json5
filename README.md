@@ -53,10 +53,13 @@ func main() {
 // This is json5 demo
 // json5 can write comment in your json
 {
+  /*
+   * And multi-line comments too
+   */
   key : "Key does not need double quote",
-  // json specific
+  /* json specific */
   "of" : "course we can use json as json5",
-  trailing : "trailing comma is ok",
+  trailing : "trailing comma is ok",  // and trailing comment
 }
 ```
 
@@ -71,7 +74,6 @@ $ json5 -c example.json5
 ```
 
 # TODO
-- block comment
 - multiline string
 - hexadecimal notation
 
