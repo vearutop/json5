@@ -6,7 +6,6 @@
    */
   key : "Key does not need double quote",
   /* json specific */
-  "of" : "course we can use json as j // son5", 
-  // json specific
-  trailing : "trailing comma is ok",
+  "of" : "course we can use json as json5",
+  trailing : "trailing comma is ok",  // and trailing comment
 } 
