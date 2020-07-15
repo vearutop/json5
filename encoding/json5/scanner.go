@@ -117,7 +117,7 @@ const (
 	scanArrayValue           // just finished array value
 	scanEndArray             // end array (implies scanArrayValue if possible)
 	scanSkipSpace            // space byte; can skip; known to be last "continue" result
-	scanSkipInComment        // inline comment can skip
+	scanSkipComment          // comment can skip
 
 	// Stop.
 	scanEnd   // top-level value ended *before* this byte; known to be first "stop" result
@@ -230,8 +230,8 @@ func stateBeginValue(s *scanner, c int) int {
 		s.step = stateN
 		return scanBeginLiteral
 	case '/': // beginning of comment
-		s.step = stateInlineComment
-		return scanSkipInComment
+		s.step = stateComment
+		return scanSkipComment
 	}
 	if '1' <= c && c <= '9' { // beginning of 1234.5
 		s.step = state1
@@ -280,8 +280,8 @@ func stateBeginValueFromComment(s *scanner, c int) int {
 		s.step = stateN
 		return scanBeginLiteral
 	case '/': // beginning of comment
-		s.step = stateInlineComment
-		return scanSkipInComment
+		s.step = stateComment
+		return scanSkipComment
 	}
 	if '1' <= c && c <= '9' { // beginning of 1234.5
 		s.step = state1
@@ -309,8 +309,8 @@ func stateBeginString(s *scanner, c int) int {
 		return scanSkipSpace
 	}
 	if c == '/' {
-		s.step = stateInlineComment
-		return scanSkipInComment
+		s.step = stateComment
+		return scanSkipComment
 	}
 	if c == '"' {
 		s.step = stateInString
@@ -668,23 +668,47 @@ func stateNul(s *scanner, c int) int {
 	return s.error(c, "in literal null (expecting 'l')")
 }
 
-// stateInlineComment is the state after reading `/`
-func stateInlineComment(s *scanner, c int) int {
+// stateComment is the state after reading `/`
+func stateComment(s *scanner, c int) int {
 	if c == '/' {
-		s.step = stateSkipComment
-		return scanSkipInComment
+		s.step = stateSkipInlineComment
+		return scanSkipComment
+	} else c == '*' {
+		s.step = stateSkipMultiLineComment
+		return scanSkipComment
 	}
 	return s.error(c, "in comment")
 }
 
-// stateSkipComment is the state after reading `//`
-func stateSkipComment(s *scanner, c int) int {
+// stateSkipInlineComment is the state after reading `//`
+func stateSkipInlineComment(s *scanner, c int) int {
 	if c == '\n' {
 		s.step = stateBeginValueFromComment
-		return scanSkipInComment
+		return scanSkipComment
 	}
-	s.step = stateSkipComment
-	return scanSkipInComment
+	s.step = stateSkipInlineComment
+	return scanSkipComment
+}
+
+// stateSkipMultiLineComment is the state after reading `/*`
+func stateSkipMultiLineComment(s *scanner, c int) int {
+	if c == '*' {
+		s.step = stateCheckCommentClose
+		return scanSkipComment
+	}
+	s.step = stateSkipMultiLineComment
+	return scanSkipComment
+}
+
+// stateCheckCommentClose is the state after reading `*`
+// within a multi-line comment.
+func stateCheckCommentClose(s *scanner, c int) int {
+	if c == '/' {
+		s.step = stateBeginValueFromComment
+		return scanSkipComment
+	}
+	s.step = stateSkipMultiLineComment
+	return scanSkipComment
 }
 
 // stateError is the state after reaching a syntax error,
